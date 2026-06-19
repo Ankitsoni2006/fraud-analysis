@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: ivc_postgres
+    environment:
+      POSTGRES_USER: ivc_user
+      POSTGRES_PASSWORD: ivc_pass
+      POSTGRES_DB: ivc_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ivc_user -d ivc_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    container_name: ivc_api
+    command: uvicorn api.app:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://ivc_user:ivc_pass@db:5432/ivc_db
+      - IVC_MODE=REAL_DATA
+    depends_on:
+      db:
+        condition: service_healthy
+
+  dashboard:
+    build: .
+    container_name: ivc_dashboard
+    command: streamlit run streamlit_dashboard.py --server.port 8501 --server.address 0.0.0.0
+    ports:
+      - "8501:8501"
+    environment:
+      - DATABASE_URL=postgresql://ivc_user:ivc_pass@db:5432/ivc_db
+      - IVC_MODE=REAL_DATA
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
+        condition: service_started
+
+volumes:
+  postgres_data:
