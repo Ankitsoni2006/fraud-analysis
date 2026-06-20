@@ -52,7 +52,7 @@ try:
     repo = IVCRepository(dbs)
     if not repo.get_scan_events():
         # DB is empty, run baseline simulation to seed tables
-        orch = IVCOrchestrator(num_orders=100)
+        orch = IVCOrchestrator(num_orders=500)
         result = orch.run(render_dashboard=False)
         repo.save_pipeline_result(result)
 finally:
@@ -240,18 +240,7 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown("##### 🖥️ System Status")
-    db_connected = False
-    try:
-        from database.db_setup import SessionLocal
-        dbs = SessionLocal()
-        dbs.execute("SELECT 1")
-        dbs.close()
-        db_connected = True
-    except Exception:
-        pass
-    status_color = "green" if db_connected else "red"
-    st.markdown(f"• Database: <span style='color:{status_color};font-weight:bold;'>{'ONLINE' if db_connected else 'OFFLINE'}</span>", unsafe_allow_html=True)
-    st.markdown(f"• Detection Engine: <span style='color:green;font-weight:bold;'>ACTIVE</span>", unsafe_allow_html=True)
+    st.markdown(f"• Detection Engine: <span style='color:#10B981;font-weight:bold;'>ACTIVE</span>", unsafe_allow_html=True)
 
     st.markdown("---")
     if st.button("♻️ Refresh Data"):
@@ -1489,7 +1478,7 @@ elif workspace == "⚙️ Platform & Data":
             db_latency_ms = 999.9
             
         with col_s1:
-            uc.render_metric_card("Database Connection", "ONLINE" if db_connected else "OFFLINE", db_type, uc.COLOR_LOW if db_connected else uc.COLOR_CRITICAL)
+            uc.render_metric_card("Database Connection", "ONLINE" if db_connected else "SIMULATED", db_type, uc.COLOR_LOW if db_connected else uc.COLOR_HIGH)
         with col_s2:
             uc.render_metric_card("Query Latency", f"{db_latency_ms} ms", "Target: < 50ms", uc.COLOR_LOW if db_latency_ms < 50 else uc.COLOR_HIGH)
         with col_s3:

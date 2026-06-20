@@ -7,10 +7,25 @@ Configures the SQLAlchemy engine, session factory, and declarative base.
 from __future__ import annotations
 
 import os
+import tempfile
+from pathlib import Path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///ivc_local.db")
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
+    db_filename = "ivc_local.db"
+    try:
+        # Check if the current directory is writable by touching a temporary file
+        test_file = Path("._db_write_test")
+        test_file.touch()
+        test_file.unlink()
+        db_path = Path(db_filename).resolve()
+    except (OSError, IOError):
+        # Fallback to system temp directory if current directory is read-only
+        db_path = Path(tempfile.gettempdir()) / db_filename
+    DATABASE_URL = f"sqlite:///{db_path.as_posix()}"
 
 # Configure sqlite specifically for thread safety in multi-threaded/FastAPI runs
 if DATABASE_URL.startswith("sqlite"):
